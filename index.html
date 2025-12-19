@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Neon Gainz - Ectomorph Evolution</title>
+    <!-- React & ReactDOM -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <!-- Babel -->
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <style>
+        /* Custom Neon & Glass Styles */
+        body {
+            background-color: #050505;
+            background-image: 
+                radial-gradient(at 0% 0%, hsla(253,16%,7%,1) 0, transparent 50%), 
+                radial-gradient(at 50% 0%, hsla(225,39%,30%,1) 0, transparent 50%), 
+                radial-gradient(at 100% 0%, hsla(339,49%,30%,1) 0, transparent 50%);
+            color: #e2e8f0;
+            font-family: 'Inter', sans-serif;
+            min-height: 100vh;
+        }
+
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.03);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .glass-card {
+            background: rgba(20, 20, 25, 0.6);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.05);
+            transition: all 0.3s ease;
+        }
+        
+        .glass-card:hover {
+            border-color: rgba(0, 255, 136, 0.3);
+            box-shadow: 0 0 15px rgba(0, 255, 136, 0.1);
+        }
+
+        .neon-text-green {
+            color: #00ff88;
+            text-shadow: 0 0 10px rgba(0, 255, 136, 0.5);
+        }
+
+        .neon-text-pink {
+            color: #ff00ff;
+            text-shadow: 0 0 10px rgba(255, 0, 255, 0.5);
+        }
+
+        .neon-border-green:focus {
+            outline: none;
+            border-color: #00ff88;
+            box-shadow: 0 0 10px rgba(0, 255, 136, 0.3);
+        }
+
+        .btn-neon {
+            background: linear-gradient(90deg, #00ff88 0%, #00cc6a 100%);
+            color: #000;
+            font-weight: bold;
+            transition: transform 0.1s;
+        }
+        .btn-neon:active {
+            transform: scale(0.95);
+        }
+
+        /* Scrollbar custom */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f0f13; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #333; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
+
+        .chat-bubble-user {
+            background: rgba(0, 255, 136, 0.1);
+            border: 1px solid rgba(0, 255, 136, 0.2);
+            color: #00ff88;
+        }
+        .chat-bubble-ai {
+            background: rgba(255, 0, 255, 0.1);
+            border: 1px solid rgba(255, 0, 255, 0.2);
+            color: #fff;
+        }
+        
+        /* Animation Utility */
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+        .animate-fade-in {
+            animation: fadeIn 0.5s ease-out forwards;
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect, useRef } = React;
+
+        // --- ICONS (SVG Directos para evitar errores de carga) ---
+        const Icons = {
+            BrainCircuit: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M12 5a3 3 0 1 0-5.997.125 4 4 0 0 0-2.526 5.77 4 4 0 0 0 .556 6.588A4 4 0 1 0 12 18Z"/><path d="M12 5a3 3 0 1 1 5.997.125 4 4 0 0 1 2.526 5.77 4 4 0 0 1-.556 6.588A4 4 0 1 1 12 18Z"/><path d="M15 13a4.5 4.5 0 0 1-3-4 4.5 4.5 0 0 1-3 4"/><path d="M17.599 6.5a3 3 0 0 0 .399-1.375"/><path d="M6.003 5.125A3 3 0 0 0 6.401 6.5"/><path d="M3.477 10.896a4 4 0 0 1 .585-.396"/><path d="M19.938 10.5a4 4 0 0 1 .585.396"/><path d="M6 18a4 4 0 0 1-1.97-3.284"/><path d="M17.97 14.716A4 4 0 0 1 18 18"/></svg>
+            ),
+            X: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M18 6 6 18"/><path d="m6 6 18 18"/></svg>
+            ),
+            ChevronRight: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="m9 18 6-6-6-6"/></svg>
+            ),
+            Save: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"/><polyline points="17 21 17 13 7 13 7 21"/><polyline points="7 3 7 8 15 8"/></svg>
+            ),
+            Check: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="20 6 9 17 4 12"/></svg>
+            ),
+            TrendingUp: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><polyline points="22 7 13.5 15.5 8.5 10.5 2 17"/><polyline points="16 7 22 7 22 13"/></svg>
+            ),
+            Activity: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+            ),
+            RefreshCw: ({size=24, className}) => (
+                <svg xmlns="http://www.w3.org/2000/svg" width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className={className}><path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"/><path d="M21 3v5h-5"/><path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"/><path d="M8 16H3v5"/></svg>
+            )
+        };
+
+        // --- DATABASE: The Routine ---
+        const routineData = {
+            martes: {
+                title: "Pierna A",
+                subtitle: "Cuádriceps & Fuerza",
+                color: "text-blue-400",
+                exercises: [
+                    { id: "p1", name: "Sentadilla Barra", sets: 4, range: "6-8", notes: "Profunda. Controlada.", focus: "Cuádriceps", alt: "Sentadilla Hack o Sentadilla con Mancuerna (Goblet)" },
+                    { id: "p2", name: "Prensa Inclinada", sets: 3, range: "10-12", notes: "Pies zona media.", focus: "Global", alt: "Sentadilla Búlgara o Zancadas con mancuernas" },
+                    { id: "p3", name: "Zancadas Búlgaras", sets: 3, range: "10-12", notes: "Mortal. Peso en talón.", focus: "Glúteo/Cuádriceps", alt: "Step-Ups (Subidas al cajón) o Prensa a una pierna" },
+                    { id: "p4", name: "Extensión Cuádriceps", sets: 3, range: "15-20", notes: "Drop-set última serie.", focus: "Aislamiento", alt: "Sentadilla Sissy o Zancadas cortas" },
+                    { id: "p5", name: "Gemelos de Pie", sets: 4, range: "12-15", notes: "Pausa 1s arriba/abajo.", focus: "Gemelo", alt: "Gemelos en Prensa o Burro" }
+                ]
+            },
+            miércoles: {
+                title: "Torso A",
+                subtitle: "Empuje (Pecho/Hombro)",
+                color: "text-pink-400",
+                exercises: [
+                    { id: "t1", name: "Press Inclinado", sets: 4, range: "6-8", notes: "Prioridad Pecho Alto.", focus: "Pectoral Superior", alt: "Press Inclinado con Mancuernas o Multipower" },
+                    { id: "t2", name: "Press Banca Barra", sets: 3, range: "6-8", notes: "Toca el pecho. Control total.", focus: "Pectoral/Fuerza", alt: "Press Plano con Mancuernas o Máquina de Pecho" },
+                    { id: "t3", name: "Press Militar", sets: 3, range: "8-10", notes: "Sin impulso de piernas.", focus: "Hombro Anterior", alt: "Press Arnold con Mancuernas o Máquina de Hombros" },
+                    { id: "t4", name: "Elev. Laterales", sets: 4, range: "12-15", notes: "Codos lideran.", focus: "Hombro Lateral", alt: "Remo al mentón (agarre ancho) o Elevaciones en Polea" },
+                    { id: "t5", name: "Fondos (Dips)", sets: 3, range: "Fallo", notes: "Inclínate adelante.", focus: "Pecho/Tríceps", alt: "Press Francés o Flexiones cerradas (diamante)" },
+                    { id: "t6", name: "Rompecráneos", sets: 3, range: "10-12", notes: "Codos al techo.", focus: "Tríceps", alt: "Tríceps en Polea (Cuerda) o Copa a dos manos" }
+                ]
+            },
+            jueves: {
+                title: "Pierna B",
+                subtitle: "Femoral & Glúteo",
+                color: "text-purple-400",
+                exercises: [
+                    { id: "p21", name: "Peso Muerto Rumano", sets: 4, range: "8-10", notes: "Espalda recta. Tirón femoral.", focus: "Isquios", alt: "Buenos Días o Peso Muerto con Mancuernas" },
+                    { id: "p22", name: "Hip Thrust", sets: 3, range: "8-10", notes: "Contrae glúteo 1s.", focus: "Glúteo", alt: "Puente de Glúteo en suelo (una pierna) o Patada de Glúteo en polea" },
+                    { id: "p23", name: "Curl Femoral", sets: 4, range: "12-15", notes: "No levantes cadera.", focus: "Isquios", alt: "Peso Muerto Rumano con Mancuernas o Curl Nórdico" },
+                    { id: "p24", name: "Prensa (Sumo)", sets: 3, range: "12-15", notes: "Pies anchos y altos.", focus: "Aductores", alt: "Sentadilla Sumo con Mancuerna (o Kettlebell)" },
+                    { id: "p25", name: "Gemelos Sentado", sets: 4, range: "15-20", notes: "Ardor máximo.", focus: "Sóleo", alt: "Gemelos en Máquina Costurera o Sentadilla isométrica puntillas" }
+                ]
+            },
+            viernes: {
+                title: "Torso B",
+                subtitle: "Espalda & Brazos Gigantes",
+                color: "text-green-400",
+                exercises: [
+                    { id: "t21", name: "Dominadas / Jalón", sets: 4, range: "Fallo", notes: "Agarre prono ancho.", focus: "Dorsales", alt: "Jalón al Pecho en Polea o Dominadas asistidas" },
+                    { id: "t22", name: "Remo Barra", sets: 3, range: "8-10", notes: "Torso 45 grados.", focus: "Densidad", alt: "Remo con Mancuerna (Serrucho) o Remo en Polea Baja" },
+                    { id: "t23", name: "Cruce Poleas", sets: 3, range: "15-20", notes: "Bombeo final.", focus: "Pecho", alt: "Aperturas con Mancuernas o Pec Deck (Mariposa)" },
+                    { id: "t24", name: "Súper: Curl Barra", sets: 4, range: "10-12", notes: "Bíceps estricto.", focus: "Bíceps", alt: "Curl con Mancuernas o Curl Martillo" },
+                    { id: "t25", name: "Súper: Pr. Francés", sets: 4, range: "10-12", notes: "Sin descanso tras Curl.", focus: "Tríceps", alt: "Extensiones de Tríceps en Polea o Patada de Tríceps" },
+                    { id: "t26", name: "Súper: Elev. Lat.", sets: 3, range: "15-20", notes: "Hombro lateral.", focus: "Hombros", alt: "Elevaciones Laterales en Polea" },
+                    { id: "t27", name: "Súper: Pájaros", sets: 3, range: "15-20", notes: "Hombro posterior.", focus: "Hombros", alt: "Face Pulls o Pájaros en Máquina" }
+                ]
+            }
+        };
+
+        // --- AI LOGIC ---
+        const generateAIResponse = (query, exercise) => {
+            const q = query.toLowerCase();
+            const exName = exercise.name;
+            
+            if (query === "__ALTERNATIVE_REQUEST__") {
+                return `🔄 **Alternativas para ${exName}:**\n\nSi no puedes hacer este ejercicio (por lesión, molestia o equipo ocupado), prueba con:\n\n👉 **${exercise.alt}**\n\nEstos ejercicios trabajan los mismos músculos (${exercise.focus}) pero con una mecánica ligeramente diferente. ¡No te detengas!`;
+            }
+
+            if (q.includes("rm") || q.includes("record") || q.includes("pesado") || q.includes("limite") || q.includes("límite")) {
+                return `🔥 **MODO BESTIA ACTIVADO:** Para ${exName}, si quieres probar tu límite hoy:\n1. Calienta muy bien (2 series de aproximación).\n2. Pide ayuda (spotter) obligatorio.\n3. Descansa 3-4 mins antes del intento.\n4. No sacrifiques la técnica por peso. ¡Tú puedes mover esos hierros!`;
+            }
+            if (q.includes("tecnica") || q.includes("técnica") || q.includes("hacerlo")) {
+                return `🛠 **Técnica Maestra para ${exName}:**\n${exercise.notes}\nRecuerda: Controla la excéntrica (bajada) en 2 segundos y explota al subir. Mantén el core apretado.`;
+            }
+            if (q.includes("duele") || q.includes("dolor") || q.includes("lesion")) {
+                return `⚠️ **Cuidado:** Si sientes dolor articular en ${exName}, PAUSA.\n1. Revisa tu postura.\n2. Baja el peso un 30% y enfócate en sentir el músculo, no en mover la carga.\n3. Si persiste, usa el botón de 🔄 Alternativa arriba a la derecha.`;
+            }
+            if (q.includes("reemplazo") || q.includes("cambiar") || q.includes("alternativa") || q.includes("otro")) {
+                return `🔄 **Alternativas sugeridas:**\n${exercise.alt}.`;
+            }
+            if (q.includes("comer") || q.includes("dieta")) {
+                return `🍗 **Combustible Ectomorfo:** Después de reventar ${exName}, necesitas carbohidratos rápidos (plátano, arroz blanco) y proteína whey inmediatamente. ¡Aprovecha la ventana anabólica!`;
+            }
+
+            return `🤖 **Coach AI:** Estás entrenando ${exName} para desarrollar ${exercise.focus}. \nMi consejo: Mantén la intensidad alta (RIR 1). Si la semana pasada hiciste 10 reps, hoy busca 11 o sube 2.5kg. ¿Tienes alguna duda específica sobre la técnica o el peso?`;
+        };
+
+        // --- COMPONENTS ---
+
+        const AIChatModal = ({ exercise, initialMode, onClose }) => {
+            const [messages, setMessages] = useState([]);
+            const [input, setInput] = useState("");
+            const chatEndRef = useRef(null);
+
+            useEffect(() => {
+                if (initialMode === 'alternative') {
+                    setMessages([
+                        { sender: 'user', text: "No puedo hacer este ejercicio, necesito una alternativa." },
+                        { sender: 'ai', text: generateAIResponse("__ALTERNATIVE_REQUEST__", exercise) }
+                    ]);
+                } else {
+                    setMessages([
+                        { sender: 'ai', text: `Hola, soy tu Coach IA. Veo que estás por hacer **${exercise.name}**. ¿En qué puedo ayudarte?` }
+                    ]);
+                }
+            }, []);
+
+            const handleSend = () => {
+                if (!input.trim()) return;
+                const userMsg = { sender: 'user', text: input };
+                setMessages(prev => [...prev, userMsg]);
+                setInput("");
+
+                setTimeout(() => {
+                    const responseText = generateAIResponse(input, exercise);
+                    setMessages(prev => [...prev, { sender: 'ai', text: responseText }]);
+                }, 800);
+            };
+
+            useEffect(() => {
+                chatEndRef.current?.scrollIntoView({ behavior: "smooth" });
+            }, [messages]);
+
+            return (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                    <div className="glass-panel w-full max-w-md h-[600px] flex flex-col rounded-2xl overflow-hidden animate-fade-in-up">
+                        <div className="p-4 border-b border-white/10 flex justify-between items-center bg-white/5">
+                            <div className="flex items-center gap-2">
+                                <Icons.BrainCircuit className="text-pink-500 animate-pulse" />
+                                <h3 className="font-bold text-white">Neon Coach <span className="text-xs text-gray-400">v2.1</span></h3>
+                            </div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-white"><Icons.X size={20}/></button>
+                        </div>
+
+                        <div className="flex-1 overflow-y-auto p-4 space-y-4">
+                            {messages.map((msg, idx) => (
+                                <div key={idx} className={`flex ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}>
+                                    <div className={`max-w-[85%] p-3 rounded-2xl text-sm whitespace-pre-line ${msg.sender === 'user' ? 'chat-bubble-user rounded-tr-none' : 'chat-bubble-ai rounded-tl-none'}`}>
+                                        {msg.text}
+                                    </div>
+                                </div>
+                            ))}
+                            <div ref={chatEndRef} />
+                        </div>
+
+                        <div className="p-4 border-t border-white/10 bg-black/40">
+                            <div className="flex gap-2">
+                                <input 
+                                    type="text" 
+                                    value={input}
+                                    onChange={(e) => setInput(e.target.value)}
+                                    onKeyDown={(e) => e.key === 'Enter' && handleSend()}
+                                    placeholder="Pregunta sobre técnica, pesos..."
+                                    className="flex-1 bg-white/5 border border-white/10 rounded-full px-4 py-2 text-white focus:outline-none focus:border-pink-500 transition-colors placeholder-gray-500"
+                                />
+                                <button onClick={handleSend} className="bg-pink-600 hover:bg-pink-500 text-white p-2 rounded-full transition-colors">
+                                    <Icons.ChevronRight />
+                                </button>
+                            </div>
+                            <div className="flex gap-2 mt-2 overflow-x-auto pb-1 no-scrollbar">
+                                <span onClick={() => setInput("Dame otra alternativa")} className="text-xs bg-white/5 px-2 py-1 rounded-md cursor-pointer hover:bg-white/10 border border-white/5 whitespace-nowrap">🔄 Otra opción</span>
+                                <span onClick={() => setInput("¿Cómo hago la técnica?")} className="text-xs bg-white/5 px-2 py-1 rounded-md cursor-pointer hover:bg-white/10 border border-white/5 whitespace-nowrap">🛠 Técnica</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const ExerciseCard = ({ exercise, dayId, savedData, onSave, onOpenChat }) => {
+            const [weight, setWeight] = useState(savedData?.weight || "");
+            const [reps, setReps] = useState(savedData?.reps || "");
+            const [isSaved, setIsSaved] = useState(false);
+
+            let progressionMsg = "Completa tu primer registro.";
+            let progressionColor = "text-gray-500";
+
+            if (savedData?.lastSession) {
+                const { weight: lastW, reps: lastR } = savedData.lastSession;
+                // Safe parsing for ranges like "10-12" or single strings like "Fallo"
+                let maxReps = 0;
+                if (exercise.range.includes('-')) {
+                    maxReps = parseInt(exercise.range.split('-')[1]);
+                } else if (exercise.range.toLowerCase().includes('fallo')) {
+                    maxReps = 100; // Arbitrary high number so message defaults to "maintain"
+                } else {
+                    maxReps = parseInt(exercise.range);
+                }
+                
+                if (!isNaN(maxReps) && parseInt(lastR) >= maxReps) {
+                    progressionMsg = `🚀 META: Sube a ${parseFloat(lastW) + 2.5}kg`;
+                    progressionColor = "neon-text-green";
+                } else {
+                    progressionMsg = `🐢 META: Mantén ${lastW}kg, busca ${parseInt(lastR) + 1} reps`;
+                    progressionColor = "text-yellow-400";
+                }
+            }
+
+            const handleSave = () => {
+                const currentData = { weight, reps, date: new Date().toISOString() };
+                onSave(exercise.id, currentData);
+                setIsSaved(true);
+                setTimeout(() => setIsSaved(false), 2000);
+            };
+
+            return (
+                <div className="glass-card rounded-xl p-4 mb-4 relative overflow-hidden group">
+                    <div className="absolute top-0 left-0 w-1 h-full bg-gradient-to-b from-transparent via-gray-700 to-transparent group-hover:via-green-500 transition-all"></div>
+                    
+                    <div className="flex justify-between items-start mb-2 pl-3">
+                        <div>
+                            <h3 className="font-bold text-lg text-white">{exercise.name}</h3>
+                            <div className="flex items-center gap-2 text-xs text-gray-400 mt-1">
+                                <span className="bg-white/10 px-2 py-0.5 rounded">{exercise.sets} Series</span>
+                                <span className="bg-white/10 px-2 py-0.5 rounded">{exercise.range} Reps</span>
+                            </div>
+                        </div>
+                        <div className="flex gap-2">
+                             <button 
+                                onClick={() => onOpenChat(exercise, 'alternative')}
+                                className="bg-white/5 hover:bg-blue-500/20 text-blue-400 p-2 rounded-full transition-colors border border-blue-500/30"
+                                title="Ver Alternativa"
+                            >
+                                <Icons.RefreshCw size={18} />
+                            </button>
+                            <button 
+                                onClick={() => onOpenChat(exercise, 'chat')}
+                                className="bg-white/5 hover:bg-pink-500/20 text-pink-400 p-2 rounded-full transition-colors border border-pink-500/30"
+                                title="Consultar Coach IA"
+                            >
+                                <Icons.BrainCircuit size={18} />
+                            </button>
+                        </div>
+                    </div>
+
+                    <p className="text-xs text-gray-500 pl-3 mb-4 italic">{exercise.notes}</p>
+
+                    <div className={`text-xs font-bold mb-3 pl-3 flex items-center gap-1 ${progressionColor}`}>
+                        <Icons.TrendingUp size={12} />
+                        {progressionMsg}
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-2 pl-3">
+                        <div className="col-span-1">
+                            <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Kilos</label>
+                            <input 
+                                type="number" 
+                                placeholder="kg" 
+                                value={weight}
+                                onChange={(e) => setWeight(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-center text-white neon-border-green"
+                            />
+                        </div>
+                        <div className="col-span-1">
+                            <label className="text-[10px] text-gray-400 uppercase font-bold ml-1">Reps</label>
+                            <input 
+                                type="number" 
+                                placeholder="#" 
+                                value={reps}
+                                onChange={(e) => setReps(e.target.value)}
+                                className="w-full bg-black/40 border border-white/10 rounded-lg p-2 text-center text-white neon-border-green"
+                            />
+                        </div>
+                        <div className="col-span-1 flex items-end">
+                            <button 
+                                onClick={handleSave}
+                                className={`w-full py-2.5 rounded-lg flex items-center justify-center gap-1 font-bold text-sm transition-all ${isSaved ? 'bg-green-500 text-black' : 'btn-neon'}`}
+                            >
+                                {isSaved ? <Icons.Check size={16}/> : <Icons.Save size={16}/>}
+                                {isSaved ? 'Listo' : 'Anotar'}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        };
+
+        const App = () => {
+            const [activeDay, setActiveDay] = useState('martes');
+            const [history, setHistory] = useState({});
+            const [chatConfig, setChatConfig] = useState(null); 
+
+            useEffect(() => {
+                const savedHistory = localStorage.getItem('neonGainzHistory');
+                if (savedHistory) {
+                    setHistory(JSON.parse(savedHistory));
+                }
+            }, []);
+
+            const saveExerciseData = (exId, data) => {
+                const newHistory = { ...history };
+                if (!newHistory[exId]) newHistory[exId] = {};
+                
+                const previous = newHistory[exId].current; 
+                if (previous) {
+                    newHistory[exId].lastSession = previous;
+                }
+                newHistory[exId].current = data; 
+                newHistory[exId].weight = data.weight; 
+                newHistory[exId].reps = data.reps; 
+
+                setHistory(newHistory);
+                localStorage.setItem('neonGainzHistory', JSON.stringify(newHistory));
+            };
+
+            const openChat = (exercise, mode) => {
+                setChatConfig({ exercise, mode });
+            };
+
+            const currentRoutine = routineData[activeDay];
+
+            return (
+                <div className="max-w-md mx-auto min-h-screen pb-20 relative">
+                    <header className="p-6 pt-8 pb-4">
+                        <div className="flex justify-between items-center mb-1">
+                            <h1 className="text-3xl font-black tracking-tighter italic">NEON <span className="text-transparent bg-clip-text bg-gradient-to-r from-green-400 to-blue-500">GAINZ</span></h1>
+                            <div className="bg-white/5 rounded-full px-3 py-1 flex items-center gap-2 border border-white/10">
+                                <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></div>
+                                <span className="text-xs font-bold text-gray-300">ECTOMORPH PRO</span>
+                            </div>
+                        </div>
+                        <p className="text-sm text-gray-400">Objetivo: <span className="text-white font-bold">60kg ➔ 75kg</span></p>
+                    </header>
+
+                    <div className="flex gap-2 px-6 overflow-x-auto pb-4 no-scrollbar">
+                        {Object.entries(routineData).map(([key, data]) => (
+                            <button 
+                                key={key}
+                                onClick={() => setActiveDay(key)}
+                                className={`px-4 py-2 rounded-xl text-sm font-bold whitespace-nowrap transition-all border ${
+                                    activeDay === key 
+                                    ? `bg-white/10 border-white/40 text-white shadow-[0_0_15px_rgba(255,255,255,0.1)]` 
+                                    : 'bg-transparent border-white/5 text-gray-500 hover:text-gray-300'
+                                }`}
+                            >
+                                {key.charAt(0).toUpperCase() + key.slice(1)}
+                            </button>
+                        ))}
+                    </div>
+
+                    <main className="px-6 animate-fade-in">
+                        <div className="mb-6 mt-2">
+                            <h2 className={`text-2xl font-bold ${currentRoutine.color}`}>{currentRoutine.title}</h2>
+                            <p className="text-gray-400 text-sm flex items-center gap-1">
+                                <Icons.Activity size={14}/> {currentRoutine.subtitle}
+                            </p>
+                        </div>
+
+                        <div className="space-y-4">
+                            {currentRoutine.exercises.map(ex => (
+                                <ExerciseCard 
+                                    key={ex.id} 
+                                    exercise={ex} 
+                                    dayId={activeDay}
+                                    savedData={history[ex.id]}
+                                    onSave={saveExerciseData}
+                                    onOpenChat={openChat}
+                                />
+                            ))}
+                        </div>
+
+                        <div className="mt-10 p-4 rounded-xl border border-dashed border-gray-700 text-center text-gray-500 text-sm">
+                            <p>🔥 Recuerda: Si no subes de peso, ¡come más!</p>
+                            <p className="text-xs mt-1">Superávit Calórico + Intensidad = Músculo</p>
+                        </div>
+                    </main>
+
+                    {chatConfig && (
+                        <AIChatModal 
+                            exercise={chatConfig.exercise}
+                            initialMode={chatConfig.mode}
+                            onClose={() => setChatConfig(null)} 
+                        />
+                    )}
+                </div>
+            );
+        };
+
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
